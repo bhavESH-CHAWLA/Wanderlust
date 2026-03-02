@@ -5,6 +5,8 @@ const listing = require("./models/listing");
 const path = require("path");
 const methodOverride=require("method-override");
 const ejsMate=require("ejs-mate");
+const WrapAsync= require("./utils/WrapAsync.js");
+const ExpressError=require("./utils/ExpressError.js");
 
 
 const MONGO_URL="mongodb://127.0.0.1:27017/Wanderlust";
@@ -59,12 +61,13 @@ app.put("/listings/:id",async(req,res)=>{
 })
 
 
-app.post("/listings",async(req,res)=>{
-    const listingData = normalizeListingPayload(req.body);
-    const newlisting=new listing(listingData);
-    await newlisting.save();
-    res.redirect("/alllistings");
-})
+app.post("/listings",WrapAsync(async(req,res,next)=>{
+         const listingData = normalizeListingPayload(req.body);
+        const newlisting=new listing(listingData);
+        await newlisting.save();
+        res.redirect("/alllistings");
+   
+}))
 
 app.get("/listings/new",(req,res)=>{
     res.render("./listings/new")
@@ -91,6 +94,9 @@ app.get("/alllistings",async (req,res)=>{
     res.render("./listings/index.ejs",{alllisting});
 })
 
+app.use((err,req,res,next)=>{
+    res.send("Something went worng!");
+})
 
 app.listen(8080,()=>{
     console.log("server is running");
