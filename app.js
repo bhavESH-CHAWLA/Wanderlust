@@ -16,6 +16,16 @@ app.use(methodOverride("_method"));
 app.engine('ejs', ejsMate);
 app.use(express.static(path.join(__dirname,'public')));
 
+const validatelisting= (req,res,next)=>{
+    let {error}=listingSchema(req.body);
+    if(error){
+        throw new ExpressError(400,error.details[0].message);
+
+    }else{
+        next();
+    }
+}
+
 
 main()
 .then(()=>{
@@ -53,7 +63,7 @@ app.delete("/listings/:id",async(req,res)=>{
     
 })
 
-app.put("/listings/:id",WrapAsync(async(req,res,next)=>{
+app.put("/listings/:id",validatelisting,WrapAsync(async(req,res,next)=>{
     const {id}=req.params;
     const listingData = normalizeListingPayload(req.body);
     await listing.findByIdAndUpdate(id, listingData, { runValidators: true });
@@ -62,8 +72,9 @@ app.put("/listings/:id",WrapAsync(async(req,res,next)=>{
 }))
 
 
-app.post("/listings",WrapAsync(async(req,res,next)=>{
-        listingSchema.validate(req.body);
+app.post("/listings",
+    validatelisting,
+    WrapAsync(async(req,res,next)=>{
          const listingData = normalizeListingPayload(req.body);
         const newlisting=new listing(listingData);
         await newlisting.save();
